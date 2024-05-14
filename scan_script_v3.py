@@ -42,7 +42,7 @@ def parse_ports(ports_str):
     elif ',' in ports_str:
         return map(int, ports_str.split(','))
     else:
-        return (int(ports_str))
+        return (int(ports_str),)
 
 def run_scanner():
     target, ports_str = get_arguments()
