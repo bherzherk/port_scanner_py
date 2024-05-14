@@ -25,7 +25,7 @@ def port_scanner(port):
 
 def run_scanner():
 
-    for port in range(start_range_port, end_range_port):
+    for port in range(start_range_port, end_range_port+1):
         port_scanner(port)
 
 if __name__ == "__main__":
