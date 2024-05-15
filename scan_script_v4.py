@@ -1,8 +1,24 @@
 #!/usr/bin/env python3
 import socket
 import argparse
+import signal
+import sys
+import time
 from concurrent.futures import ThreadPoolExecutor
 from termcolor import colored
+
+open_sockets = []
+
+def sig_handler(sig, frame):
+    print(colored(f"[!] Aborting program...", 'red'))
+
+    for socket in open_sockets:
+        socket.close()
+
+
+    sys.exit(1)
+
+signal.signal(signal.SIGINT, sig_handler) # CRTL + C
 
 def get_arguments():
     parser = argparse.ArgumentParser(description="Fast TCP Port Scanner")
@@ -15,6 +31,9 @@ def get_arguments():
 def create_socket():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.settimeout(1)
+
+    open_sockets.append(s)
+
     return s
 
 def port_scanner(port, host):
@@ -22,7 +41,17 @@ def port_scanner(port, host):
 
     try:
         s.connect((host, port))
-        print(colored(f"\n[+] The port {port} is open.", 'cyan'))
+        s.sendall(b"HEAD / HTTP/1.0\r\n\r\n")
+        response = s.recv(1024)
+        response = response.decode(errors='ignore').split('\n')
+        if response:
+            print(colored(f"\n[+] The port {port} is open\n", 'cyan'))
+
+            for line in response:
+                print(colored(line, 'green'))
+                
+        else:
+            print(colored(f"[+] The port {port} is open", 'cyan'))
     except (socket.timeout, ConnectionRefusedError):
         pass
     finally:
@@ -45,6 +74,7 @@ def run_scanner():
     target, ports_str = get_arguments()
     ports = parse_ports(ports_str)
     thread_exe(ports, target)
+
 
 if __name__ == "__main__":
     run_scanner()
